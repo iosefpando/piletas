@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Piletas FAST PRO V2</title>
+<meta name="theme-color" content="#184a52">
+<link rel="manifest" href="manifest.json">
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+  background:linear-gradient(180deg,#10343a,#1f555c 35%,#eef3f8);
+  min-height:100vh;
+  padding:14px;
+  padding-bottom:280px; /* Espacio para que el teclado flotante no tape contenido */
+}
+
+.wrap{
+  max-width:480px;
+  margin:auto;
+}
+
+h1{
+  color:white;
+  text-align:center;
+  font-size:28px;
+  margin:8px 0 16px;
+  letter-spacing:1px;
+}
+
+.card{
+  background:white;
+  border-radius:18px;
+  padding:16px;
+  margin-bottom:14px;
+  box-shadow:0 8px 18px rgba(0,0,0,.12);
+}
+
+h2{
+  font-size:16px;
+  color:#184a52;
+  margin-bottom:10px;
+  text-transform:uppercase;
+}
+
+input{
+  width:100%;
+  padding:14px;
+  font-size:20px;
+  border-radius:14px;
+  border:2px solid #ccd6db;
+  outline:none;
+  background:#fff;
+}
+
+/* Indicador visual de campo activo */
+input.activo{
+  border-color:#184a52;
+  background-color:#f0f7f8;
+}
+
+button.btn-accion{
+  width:100%;
+  padding:14px;
+  font-size:18px;
+  font-weight:bold;
+  border:none;
+  border-radius:14px;
+  background:#184a52;
+  color:white;
+  cursor:pointer;
+}
+
+button:active{
+  transform:scale(.97);
+}
+
+.info{
+  font-size:15px;
+  color:#333;
+  margin-top:10px;
+  line-height:1.5;
+}
+
+.result{
+  margin-top:10px;
+  font-size:24px;
+  font-weight:bold;
+  text-align:center;
+}
+
+.ok{color:#087d26;}
+.err{color:#c00020;}
+
+.small{
+  font-size:13px;
+  color:#666;
+  margin-top:6px;
+}
+
+.fila{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+.fila input{
+  flex:1;
+}
+
+.fila button{
+  width:120px;
+  flex-shrink:0;
+}
+
+.teclado{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  max-width:480px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:6px;
+  padding:10px;
+  background:#d1dbe0;
+  border-top-left-radius:16px;
+  border-top-right-radius:16px;
+  box-shadow:0 -4px 20px rgba(0,0,0,0.2);
+  z-index:100;
+}
+
+.teclado button{
+  padding:14px;
+  font-size:22px;
+  border:none;
+  border-radius:10px;
+  background:white;
+  font-weight:bold;
+  color:#184a52;
+  box-shadow:0 2px 4px rgba(0,0,0,0.1);
+}
+
+.teclado .bk{
+  background:#5c6670;
+  color:white;
+}
+
+.teclado .en{
+  grid-column:span 2;
+  background:#184a52;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+<h1>PILETAS FAST PRO</h1>
+
+<!-- BUSCAR PILETA -->
+<div class="card">
+  <h2>1. Buscar pileta</h2>
+  <div class="fila">
+    <input id="pileta" class="activo" placeholder="N° Pileta" inputmode="none" readonly>
+    <button class="btn-accion" onclick="buscar()">BUSCAR</button>
+  </div>
+  <div id="datos" class="info"></div>
+</div>
+
+<!-- METROS -> LITROS -->
+<div class="card">
+  <h2>2. Metros → Litros</h2>
+  <div class="fila">
+    <input id="metros" placeholder="Ej: 1,50 o -0,30" inputmode="none" readonly>
+    <button class="btn-accion" onclick="calcLitros()">CALCULAR</button>
+  </div>
+  <div class="small">Use valor negativo (-) si midió el vacío superior.</div>
+  <div id="res1" class="result"></div>
+</div>
+
+<!-- LITROS -> METROS -->
+<div class="card">
+  <h2>3. Litros → Metros</h2>
+  <div class="fila">
+    <input id="litros" placeholder="Ej: 12000" inputmode="none" readonly>
+    <button class="btn-accion" onclick="calcMetros()">CALCULAR</button>
+  </div>
+  <div id="res2" class="result"></div>
+</div>
+
+<div class="card">
+  <button class="btn-accion" style="background:#8c2525;" onclick="limpiar()">LIMPIAR TODO</button>
+</div>
+
+</div>
+
+<!-- TECLADO NUMÉRICO FLOTANTE -->
+<div class="teclado">
+  <button onclick="tk('1')">1</button>
+  <button onclick="tk('2')">2</button>
+  <button onclick="tk('3')">3</button>
+
+  <button onclick="tk('4')">4</button>
+  <button onclick="tk('5')">5</button>
+  <button onclick="tk('6')">6</button>
+
+  <button onclick="tk('7')">7</button>
+  <button onclick="tk('8')">8</button>
+  <button onclick="tk('9')">9</button>
+
+  <button onclick="tk('-')">-</button>
+  <button onclick="tk('0')">0</button>
+  <button onclick="tk(',')">,</button>
+
+  <button class="bk" onclick="retro()">⌫</button>
+  <button class="en" onclick="enterTk()">ENTER</button>
+</div>
+
+<script>
+let litrosCm = 0;
+let capacidad = 0;
+
+/* BASE DE DATOS DE PILETAS */
+const base = {
+"1": {hl:134,lcm:48},
+"2": {hl:162,lcm:58},
+"3": {hl:243,lcm:75},
+"4": {hl:265,lcm:82},
+"5": {hl:217,lcm:67.97},
+"6": {hl:219,lcm:68.97},
+"7": {hl:229,lcm:72.78},
+"8": {hl:220,lcm:70.66},
+"9": {hl:223,lcm:71.53},
+"10": {hl:221,lcm:70.24},
+"11": {hl:225,lcm:71.99},
+"12": {hl:230,lcm:71.86},
+"13": {hl:220,lcm:69.03},
+"14": {hl:229,lcm:71.96},
+"15": {hl:226,lcm:70.65},
+"16": {hl:232,lcm:71.67},
+"17": {hl:225,lcm:69.35},
+"18": {hl:221,lcm:68.08},
+"19": {hl:87,lcm:213},
+"20": {hl:85,lcm:25},
+"21": {hl:402,lcm:125.64},
+"22": {hl:411,lcm:125.69},
+"23": {hl:398,lcm:123.49},
+"24": {hl:398,lcm:123.49},
+"25": {hl:392,lcm:122.59},
+"26": {hl:399,lcm:124.04},
+"27": {hl:386,lcm:123.65},
+"28": {hl:383,lcm:123.33},
+"29": {hl:384,lcm:122.22},
+"30": {hl:386,lcm:122.24},
+"31": {hl:394,lcm:124.58},
+"32": {hl:393,lcm:124.24},
+"33": {hl:197,lcm:61},
+"34": {hl:175,lcm:53},
+"35": {hl:148,lcm:46},
+"36": {hl:826,lcm:254},
+"37": {hl:828,lcm:254},
+"38": {hl:817,lcm:252},
+"39": {hl:686,lcm:234},
+"40": {hl:125,lcm:42.8},
+"41": {hl:127,lcm:43.4},
+"42": {hl:126,lcm:43.4},
+"43": {hl:126,lcm:43.4},
+"44": {hl:123,lcm:43.7},
+"45": {hl:757,lcm:259},
+"46": {hl:1500,lcm:515},
+"47": {hl:954,lcm:329},
+"48": {hl:480,lcm:164},
+"49": {hl:144,lcm:50.5},
+"50": {hl:147,lcm:51.3},
+"51": {hl:144,lcm:50.5},
+"52": {hl:65,lcm:21.3},
+"53": {hl:70,lcm:21.5},
+"54": {hl:67,lcm:20.3},
+"55": {hl:29,lcm:30},
+"56": {hl:392,lcm:126},
+"57": {hl:526,lcm:168},
+"58": {hl:927,lcm:299},
+"59": {hl:472,lcm:152},
+"60": {hl:966,lcm:311},
+"61": {hl:957,lcm:311},
+"62": {hl:1637,lcm:529},
+"63": {hl:1631,lcm:523},
+"64": {hl:801,lcm:258},
+"65": {hl:1639,lcm:524},
+"66": {hl:62,lcm:23},
+"67": {hl:814,lcm:250},
+"68": {hl:179,lcm:55},
+"69": {hl:1248,lcm:385},
+"70": {hl:172,lcm:56},
+"71": {hl:816,lcm:250},
+"72": {hl:817,lcm:250},
+"73": {hl:811,lcm:250},
+"74": {hl:1523,lcm:417},
+"75": {hl:768,lcm:234},
+"76": {hl:2170,lcm:682},
+"77": {hl:1073,lcm:336},
+"78": {hl:1044,lcm:325},
+"79": {hl:1681,lcm:526},
+"80": {hl:1683,lcm:526},
+"81": {hl:2437,lcm:763},
+"82": {hl:1405,lcm:454},
+"83": {hl:947,lcm:304},
+"84": {hl:1319,lcm:424},
+"85": {hl:715,lcm:229},
+"86": {hl:4999,lcm:778},
+"87": {hl:2493,lcm:461},
+"88": {hl:2488,lcm:461},
+"89": {hl:2400,lcm:462},
+"90": {hl:2492,lcm:461},
+"91": {hl:2489,lcm:461},
+"92": {hl:2486,lcm:462},
+"93": {hl:166,lcm:55.7},
+"94": {hl:60,lcm:20.1},
+"95": {hl:59,lcm:19.7},
+"96": {hl:59,lcm:19.7},
+"97": {hl:60,lcm:20.1},
+"98": {hl:219,lcm:73.5},
+"99": {hl:94,lcm:31.5},
+"100": {hl:94,lcm:31.5},
+"101": {hl:108,lcm:36.2},
+"102": {hl:104,lcm:34.9},
+"103": {hl:200,lcm:67.1},
+"104": {hl:112,lcm:44.8},
+"105": {hl:50,lcm:18.96}
+};
+
+function $(id){
+  return document.getElementById(id);
+}
+
+function formato(n, dec=0){
+  return n.toLocaleString("es-AR", {
+    minimumFractionDigits: dec,
+    maximumFractionDigits: dec
+  });
+}
+
+function numero(v){
+  if(!v) return NaN;
+  return parseFloat(v.replace(",", "."));
+}
+
+function buscar(){
+  let p = $("pileta").value.trim();
+
+  if(!base[p]){
+    $("datos").innerHTML = "<b class='err'>Pileta no encontrada</b>";
+    litrosCm = 0;
+    capacidad = 0;
+    return;
+  }
+
+  litrosCm = base[p].lcm;
+  capacidad = base[p].hl * 100;
+
+  $("datos").innerHTML =
+    "<b>Capacidad:</b> " + formato(base[p].hl) + " hl (" + formato(capacidad) + " L)<br>" +
+    "<b>Litros por cm:</b> " + formato(litrosCm, 2) + " L/cm";
+
+  seleccionarCampo("metros");
+}
+
+function calcLitros(){
+  let m = numero($("metros").value);
+
+  if(isNaN(m) || litrosCm === 0){
+    $("res1").className = "result err";
+    $("res1").innerHTML = litrosCm === 0 ? "Seleccione pileta primero" : "Ingrese metros válidos";
+    return;
+  }
+
+  if(m >= 0){
+    let litros = m * 100 * litrosCm;
+    $("res1").className = "result " + (litros > capacidad ? "err" : "ok");
+    $("res1").innerHTML = formato(litros) + " L" + (litros > capacidad ? " ⚠ EXCEDE" : "");
+  } else {
+    let vacio = Math.abs(m) * 100 * litrosCm;
+    let contenido = capacidad - vacio;
+    $("res1").className = "result " + (contenido < 0 ? "err" : "ok");
+    $("res1").innerHTML = formato(contenido) + " L" + (contenido < 0 ? " ⚠ EXCEDE VACÍO" : "");
+  }
+}
+
+function calcMetros(){
+  let l = numero($("litros").value);
+
+  if(isNaN(l) || litrosCm === 0){
+    $("res2").className = "result err";
+    $("res2").innerHTML = litrosCm === 0 ? "Seleccione pileta primero" : "Ingrese litros válidos";
+    return;
+  }
+
+  if(l > capacidad){
+    $("res2").className = "result err";
+    $("res2").innerHTML = "EXCEDE CAPACIDAD";
+    return;
+  }
+
+  let metros = (l / litrosCm) / 100;
+  $("res2").className = "result ok";
+  $("res2").innerHTML = formato(metros, 2) + " m";
+}
+
+function limpiar(){
+  $("pileta").value = "";
+  $("metros").value = "";
+  $("litros").value = "";
+  $("datos").innerHTML = "";
+  $("res1").innerHTML = "";
+  $("res2").innerHTML = "";
+  litrosCm = 0;
+  capacidad = 0;
+  seleccionarCampo("pileta");
+}
+
+/* Control del campo activo */
+let campoActivo = "pileta";
+
+function seleccionarCampo(id){
+  campoActivo = id;
+  ["pileta","metros","litros"].forEach(k => {
+    if(k === id){
+      $(k).classList.add("activo");
+    } else {
+      $(k).classList.remove("activo");
+    }
+  });
+}
+
+["pileta","metros","litros"].forEach(id => {
+  $(id).onclick = function(){
+    seleccionarCampo(id);
+  };
+});
+
+function tk(t){
+  let input = $(campoActivo);
+  // Evita múltiples comas o signos menos duplicados
+  if(t === ',' && input.value.includes(',')) return;
+  if(t === '-' && input.value.length > 0) return;
+  input.value += t;
+}
+
+function retro(){
+  let v = $(campoActivo).value;
+  $(campoActivo).value = v.slice(0, -1);
+}
+
+function enterTk(){
+  if(campoActivo === "pileta"){
+    buscar();
+  } else if(campoActivo === "metros"){
+    calcLitros();
+  } else if(campoActivo === "litros"){
+    calcMetros();
+  }
+}
+
+// Registrar Service Worker para soporte Offline / PWA
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('App lista para uso offline', reg))
+        .catch(err => console.error('Error en Service Worker', err));
+    });
+  }
+
+</script>
+
+<!-- El teclado va afuera de la etiqueta script, pero adentro del body -->
+<div class="teclado">
+  <button onclick="tk('1')">1</button>
+  <button onclick="tk('2')">2</button>
+  ...
+</div>
+
+</body>
+</html>
